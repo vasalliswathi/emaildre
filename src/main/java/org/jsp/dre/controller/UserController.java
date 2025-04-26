@@ -48,4 +48,11 @@ public class UserController {
 		return service.findMatch(id,top);
 		
 	}
+	
+	
+	
+	@GetMapping("/search/{name}")
+	public ResponseEntity<?> search(@PathVariable String name){
+		return service.search(name);
+	}
 }

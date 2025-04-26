@@ -21,68 +21,71 @@ public class UserService {
 
 	@Autowired
 	private UserDao dao;
-	
+
 	@Autowired
 	private EmailService emailService;
 
 	public ResponseEntity<?> saveUser(User user) {
 
-		User savedUser=dao.saveUser(user);
+		User savedUser = dao.saveUser(user);
 		emailService.sendEmail(savedUser);
-		
-		ResponseStructure rs =ResponseStructure.builder().status(HttpStatus.OK.value()).message("saved user successsfully").body(savedUser).build();
-		ResponseEntity re=ResponseEntity.status(HttpStatus.OK).body(rs);
-		
+
+		ResponseStructure rs = ResponseStructure.builder().status(HttpStatus.OK.value())
+				.message("saved user successsfully").body(savedUser).build();
+		ResponseEntity re = ResponseEntity.status(HttpStatus.OK).body(rs);
+
 		return re;
 	}
 
 	public ResponseEntity<?> findAllUsers() {
 		List<User> users = dao.findAllUsers();
-		
-		ResponseStructure rs=ResponseStructure.builder().status(HttpStatus.OK.value()).message("All Users Found Successfully").body(users).build();
-		ResponseEntity re=ResponseEntity.status(HttpStatus.OK).body(rs);
+
+		ResponseStructure rs = ResponseStructure.builder().status(HttpStatus.OK.value())
+				.message("All Users Found Successfully").body(users).build();
+		ResponseEntity re = ResponseEntity.status(HttpStatus.OK).body(rs);
 		return re;
 	}
 
 	public ResponseEntity<?> findUserById(int id) {
-		
-		Optional<User> optional=dao.findUserById(id);
-		
-		if(optional.isEmpty()) {
-			//exception
-			ResponseStructure rs=ResponseStructure.builder().status(HttpStatus.OK.value()).message("User Not Found").body(id).build();
-			ResponseEntity re=ResponseEntity.status(HttpStatus.OK).body(rs);
+
+		Optional<User> optional = dao.findUserById(id);
+
+		if (optional.isEmpty()) {
+			// exception
+			ResponseStructure rs = ResponseStructure.builder().status(HttpStatus.OK.value()).message("User Not Found")
+					.body(id).build();
+			ResponseEntity re = ResponseEntity.status(HttpStatus.OK).body(rs);
 			return re;
 		}
-		
+
 		User u = optional.get();
-		
-		ResponseStructure rs=ResponseStructure.builder().status(HttpStatus.OK.value()).message("User Found Successfully Done").body(u).build();
-		ResponseEntity re=ResponseEntity.status(HttpStatus.OK).body(rs);
+
+		ResponseStructure rs = ResponseStructure.builder().status(HttpStatus.OK.value())
+				.message("User Found Successfully Done").body(u).build();
+		ResponseEntity re = ResponseEntity.status(HttpStatus.OK).body(rs);
 		return re;
 	}
 
 	public ResponseEntity<?> findMatch(int id, int top) {
 		Optional<User> optional = dao.findUserById(id);
-		if(optional.isEmpty()) {
+		if (optional.isEmpty()) {
 			throw new RuntimeException("Invalid user Id,Unable to find TOP matches");
 		}
 		User user = optional.get();
-		
-		String gf= null;
-		if(user.getGender().equalsIgnoreCase("MALE")) {
-			gf="FEMALE";
+
+		String gf = null;
+		if (user.getGender().equalsIgnoreCase("MALE")) {
+			gf = "FEMALE";
+		} else {
+			gf = "MALE";
 		}
-		else {
-			gf="MALE";
-		}
-		
+
 		List<User> users = dao.findByGender(gf);
-		
-		List<MatchingUser> matchingUser=new ArrayList<>();
-		for(User u:users) {
-			
-			MatchingUser mu=new MatchingUser();
+
+		List<MatchingUser> matchingUser = new ArrayList<>();
+		for (User u : users) {
+
+			MatchingUser mu = new MatchingUser();
 			mu.setId(u.getId());
 			mu.setName(u.getName());
 			mu.setEmail(u.getEmail());
@@ -91,47 +94,63 @@ public class UserService {
 			mu.setAge(u.getAge());
 			mu.setIntrests(u.getIntrests());
 			mu.setGender(u.getGender());
-			
-			int ad=user.getAge()-u.getAge();
-			
-			int aad=Math.abs(ad);
-			
+
+			int ad = user.getAge() - u.getAge();
+
+			int aad = Math.abs(ad);
+
 			mu.setAgeDifference(aad);
-			
-			int mic=0;
+
+			int mic = 0;
 			List<String> intrests1 = user.getIntrests();
 			List<String> intrests2 = u.getIntrests();
-			for(String i:intrests1) {
-				
-				if(intrests2.contains(i)) {
+			for (String i : intrests1) {
+
+				if (intrests2.contains(i)) {
 					mic++;
 				}
 			}
-			
+
 			mu.setMatchingIntrestCount(mic);
-			
+
 			matchingUser.add(mu);
 		}
-		
+
 		Collections.sort(matchingUser, new SortByAge());
-		
-		int c=0;
-		List<MatchingUser> result=new ArrayList<>();
-		for(MatchingUser mu:matchingUser) {
-			if(top==0)
+
+		int c = 0;
+		List<MatchingUser> result = new ArrayList<>();
+		for (MatchingUser mu : matchingUser) {
+			if (top == 0)
 				break;
 			else {
 				result.add(mu);
 				top--;
 			}
 		}
-		ResponseStructure rs= ResponseStructure.builder().status(HttpStatus.OK.value()).message("Top matching Users Found").body(result).build();
-		ResponseEntity re=ResponseEntity.status(HttpStatus.OK).body(rs);
-		
+		ResponseStructure rs = ResponseStructure.builder().status(HttpStatus.OK.value())
+				.message("Top matching Users Found").body(result).build();
+		ResponseEntity re = ResponseEntity.status(HttpStatus.OK).body(rs);
+
 		return re;
 	}
 
+	public ResponseEntity<?> search(String name) {
 
+		List<User> all = dao.findAllUsers();
+		List<User> result = new ArrayList<>();
+		for (User u : all) {
+			if (u.getName().indexOf(name) != -1) {
+				result.add(u);
+			}
+			
+		}
+		
+		ResponseStructure rs = ResponseStructure.builder().status(HttpStatus.OK.value())
+				.message("All Matching Users Found Successfully").body(result).build();
+		ResponseEntity re=ResponseEntity.status(HttpStatus.OK).body(rs);
 
-	
+		return re;
+	}
+
 }
